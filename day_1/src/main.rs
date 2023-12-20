@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -13,7 +12,7 @@ fn find_number(line: &str) -> Option<u32> {
     format!("{}{}", first, last).parse::<u32>().ok()
 }
 
-fn first_solution(filepath: String) -> Result<u32, std::io::Error> {
+fn first_solution(filepath: &str) -> Result<u32, std::io::Error> {
     let file = File::open(filepath)?;
     let reader = BufReader::new(file);
     Ok(reader
@@ -22,34 +21,44 @@ fn first_solution(filepath: String) -> Result<u32, std::io::Error> {
         .sum::<u32>())
 }
 
-fn find_number_two<'a>(line: String) -> Option<&'a str> {
-    // println!("{}", line);
-    (0..line.len())
-        .find_map(|i| DIGITS.iter().find(|digit| line[i..].starts_with(*digit)))
-        .copied()
+fn word_to_digit(word: &str) -> &str {
+    DIGITS[..10]
+        .iter()
+        .enumerate()
+        .find(|(_, digit)| **digit == word)
+        .map(|(i, _)| DIGITS[i + 10])
+        .unwrap_or_else(|| word)
+}
+
+fn find_number_two(line: String) -> Option<u32> {
+    let first =
+        (0..line.len()).find_map(|i| DIGITS.iter().find(|digit| line[i..].starts_with(*digit)))?;
+    let last = (0..line.len())
+        .rev()
+        .find_map(|i| DIGITS.iter().find(|digit| line[i..].starts_with(*digit)))?;
+
+    let first = word_to_digit(first);
+    let last = word_to_digit(last);
+
+    format!("{}{}", first, last).parse::<u32>().ok()
 }
 
 fn solution_two(filepath: &str) -> Result<u32, std::io::Error> {
     let file = File::open(filepath)?;
     let reader = BufReader::new(file);
-    // for line in reader.lines() {
-    //     println!("{:?}", line);
-    // }
-    let first: Vec<_> = reader.lines().flatten().flat_map(find_number_two).collect();
-    for digit in first {
-        println!("{}", digit);
-    }
-    // println!("{:?}", first);
-    // .sum::<u32>());
-
-    Ok(0)
+    Ok(reader
+        .lines()
+        .flatten()
+        .flat_map(find_number_two)
+        .sum::<u32>())
 }
 
 fn main() -> Result<(), std::io::Error> {
     let filepath = std::env::args().nth(1).unwrap();
-    // let sum = first_solution(filepath)?;
-    solution_two(&filepath)?;
-    // println!("Sum: {}", sum);
+    let sum = first_solution(&filepath)?;
+    println!("First sum: {}", sum);
+    let sum = solution_two(&filepath)?;
+    println!("Second sum: {}", sum);
 
     Ok(())
 }
