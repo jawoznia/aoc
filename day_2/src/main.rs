@@ -1,5 +1,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::iter::Sum;
+use std::ops::Add;
 
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alpha1, char, digit1};
@@ -7,10 +9,43 @@ use nom::multi::separated_list1;
 use nom::IResult;
 
 #[derive(Default, Debug, PartialEq)]
-pub struct Color {
-    red: u8,
-    green: u8,
-    blue: u8,
+pub struct Balls {
+    red: u32,
+    green: u32,
+    blue: u32,
+}
+
+impl From<Vec<(&str, &str)>> for Balls {
+    fn from(input: Vec<(&str, &str)>) -> Self {
+        let mut balls = Balls::default();
+        input.iter().for_each(|ball| {
+            let (color, count) = ball;
+            match *color {
+                "red" => balls.red += count.parse::<u32>().unwrap(),
+                "green" => balls.green += count.parse::<u32>().unwrap(),
+                "blue" => balls.blue += count.parse::<u32>().unwrap(),
+                _ => panic!("Unknown color"),
+            }
+        });
+        balls
+    }
+}
+
+impl Sum for Balls {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::default(), |acc, item| acc + item)
+    }
+}
+
+impl Add for Balls {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Balls {
+            red: self.red + rhs.red,
+            green: self.green + rhs.green,
+            blue: self.blue + rhs.blue,
+        }
+    }
 }
 
 fn game(input: &str) -> IResult<&str, &str> {
@@ -36,21 +71,24 @@ fn balls_amount(input: &str) -> IResult<&str, (&str, &str)> {
 }
 
 /// Parses up to 3 sets of colored balls
-fn single_set(input: &str) -> IResult<&str, Vec<(&str, &str)>> {
-    separated_list1(char(','), balls_amount)(input)
+fn single_set(input: &str) -> IResult<&str, Balls> {
+    separated_list1(char(','), balls_amount)(input).map(|(input, balls)| (input, From::from(balls)))
 }
 
-fn balls(input: &str) -> IResult<&str, Color> {
+fn balls(input: &str) -> IResult<&str, Balls> {
     // Game X:
     let (input, _) = game(input)?;
 
     // Read number and color of balls
     let (input, balls) = separated_list1(char(';'), single_set)(input)?;
+    let balls: Balls = balls.into_iter().sum();
     println!("Line\n");
-    balls.iter().for_each(|ball| println!("Found {:?}", ball));
+    println!("{:?}", balls);
+
+    // balls.iter().for_each(|ball| println!("Found {:?}", ball));
 
     //
-    Ok((input, Color::default()))
+    Ok((input, Balls::default()))
 }
 
 fn read_file() -> Result<BufReader<File>, std::io::Error> {
