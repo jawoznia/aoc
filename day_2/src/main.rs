@@ -15,6 +15,16 @@ pub struct Balls {
     blue: u32,
 }
 
+impl Balls {
+    pub fn new(red: u32, green: u32, blue: u32) -> Self {
+        Balls { red, green, blue }
+    }
+
+    pub fn condition_1(&self) -> bool {
+        self.red < 14 && self.green < 13 && self.red < 12
+    }
+}
+
 impl From<Vec<(&str, &str)>> for Balls {
     fn from(input: Vec<(&str, &str)>) -> Self {
         let mut balls = Balls::default();
@@ -40,11 +50,11 @@ impl Sum for Balls {
 impl Add for Balls {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Balls {
-            red: self.red + rhs.red,
-            green: self.green + rhs.green,
-            blue: self.blue + rhs.blue,
-        }
+        Balls::new(
+            self.red + rhs.red,
+            self.green + rhs.green,
+            self.blue + rhs.blue,
+        )
     }
 }
 
@@ -82,13 +92,8 @@ fn balls(input: &str) -> IResult<&str, Balls> {
     // Read number and color of balls
     let (input, balls) = separated_list1(char(';'), single_set)(input)?;
     let balls: Balls = balls.into_iter().sum();
-    println!("Line\n");
-    println!("{:?}", balls);
 
-    // balls.iter().for_each(|ball| println!("Found {:?}", ball));
-
-    //
-    Ok((input, Balls::default()))
+    Ok((input, balls))
 }
 
 fn read_file() -> Result<BufReader<File>, std::io::Error> {
@@ -99,8 +104,14 @@ fn read_file() -> Result<BufReader<File>, std::io::Error> {
 
 fn main() -> Result<(), std::io::Error> {
     let lines: Vec<_> = read_file()?.lines().collect::<Result<_, _>>()?;
-    let balls: Vec<_> = lines.iter().map(|line| balls(line)).collect();
-    balls.iter().for_each(|ball| println!("{:?}", ball));
+    let solution_1: usize = lines
+        .iter()
+        .map(|line| balls(line).unwrap())
+        .enumerate()
+        .filter(|(_, (_, balls))| balls.condition_1())
+        .map(|(i, _)| i + 1)
+        .sum();
+    println!("Solution 1: {}", solution_1);
 
     Ok(())
 }
