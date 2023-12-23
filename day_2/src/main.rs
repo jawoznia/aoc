@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::u32::MAX;
 
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alpha1, char, digit1};
@@ -108,7 +107,6 @@ fn solution_2(lines: &[String]) -> u32 {
             let balls = balls
                 .into_iter()
                 .fold(Balls::default(), |acc, balls| acc.max(balls));
-            println!("{:?}", balls);
             balls.mul()
         })
         .sum::<u32>()
