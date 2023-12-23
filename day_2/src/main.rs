@@ -21,7 +21,7 @@ impl Balls {
     }
 
     pub fn condition_1(&self) -> bool {
-        self.red < 14 && self.green < 13 && self.red < 12
+        self.red <= 14 && self.green <= 13 && self.red <= 12
     }
 }
 
