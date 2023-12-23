@@ -1,7 +1,5 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::iter::Sum;
-use std::ops::Add;
 
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alpha1, char, digit1};
@@ -21,7 +19,7 @@ impl Balls {
     }
 
     pub fn condition_1(&self) -> bool {
-        self.red <= 14 && self.green <= 13 && self.red <= 12
+        self.red <= 12 && self.green <= 13 && self.blue <= 14
     }
 }
 
@@ -38,23 +36,6 @@ impl From<Vec<(&str, &str)>> for Balls {
             }
         });
         balls
-    }
-}
-
-impl Sum for Balls {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self::default(), |acc, item| acc + item)
-    }
-}
-
-impl Add for Balls {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        Balls::new(
-            self.red + rhs.red,
-            self.green + rhs.green,
-            self.blue + rhs.blue,
-        )
     }
 }
 
@@ -85,15 +66,9 @@ fn single_set(input: &str) -> IResult<&str, Balls> {
     separated_list1(char(','), balls_amount)(input).map(|(input, balls)| (input, From::from(balls)))
 }
 
-fn balls(input: &str) -> IResult<&str, Balls> {
-    // Game X:
+fn balls(input: &str) -> IResult<&str, Vec<Balls>> {
     let (input, _) = game(input)?;
-
-    // Read number and color of balls
-    let (input, balls) = separated_list1(char(';'), single_set)(input)?;
-    let balls: Balls = balls.into_iter().sum();
-
-    Ok((input, balls))
+    separated_list1(char(';'), single_set)(input)
 }
 
 fn read_file() -> Result<BufReader<File>, std::io::Error> {
@@ -108,7 +83,7 @@ fn main() -> Result<(), std::io::Error> {
         .iter()
         .map(|line| balls(line).unwrap())
         .enumerate()
-        .filter(|(_, (_, balls))| balls.condition_1())
+        .filter(|(_, (_, balls))| balls.iter().all(Balls::condition_1))
         .map(|(i, _)| i + 1)
         .sum();
     println!("Solution 1: {}", solution_1);
