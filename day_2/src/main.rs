@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::u32::MAX;
 
 use nom::bytes::complete::{tag, take_until};
 use nom::character::complete::{alpha1, char, digit1};
@@ -20,6 +21,18 @@ impl Balls {
 
     pub fn condition_1(&self) -> bool {
         self.red <= 12 && self.green <= 13 && self.blue <= 14
+    }
+
+    pub fn max(self, other: Self) -> Self {
+        Self {
+            red: self.red.max(other.red),
+            green: self.green.max(other.green),
+            blue: self.blue.max(other.blue),
+        }
+    }
+
+    pub fn mul(self) -> u32 {
+        self.red * self.green * self.blue
     }
 }
 
@@ -77,16 +90,36 @@ fn read_file() -> Result<BufReader<File>, std::io::Error> {
     Ok(BufReader::new(file))
 }
 
-fn main() -> Result<(), std::io::Error> {
-    let lines: Vec<_> = read_file()?.lines().collect::<Result<_, _>>()?;
-    let solution_1: usize = lines
+fn solution_1(lines: &[String]) -> usize {
+    lines
         .iter()
         .map(|line| balls(line).unwrap())
         .enumerate()
         .filter(|(_, (_, balls))| balls.iter().all(Balls::condition_1))
         .map(|(i, _)| i + 1)
-        .sum();
+        .sum()
+}
+
+fn solution_2(lines: &[String]) -> u32 {
+    lines
+        .iter()
+        .map(|line| balls(line).unwrap())
+        .map(|(_, balls)| {
+            let balls = balls
+                .into_iter()
+                .fold(Balls::default(), |acc, balls| acc.max(balls));
+            println!("{:?}", balls);
+            balls.mul()
+        })
+        .sum::<u32>()
+}
+
+fn main() -> Result<(), std::io::Error> {
+    let lines: Vec<_> = read_file()?.lines().collect::<Result<_, _>>()?;
+    let solution_1: usize = solution_1(&lines);
     println!("Solution 1: {}", solution_1);
+    let solution_2: u32 = solution_2(&lines);
+    println!("Solution 2: {}", solution_2);
 
     Ok(())
 }
